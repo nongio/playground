@@ -43,7 +43,7 @@
         <span id="app_name">Test</span>
         <div class="app">
             <img src="https://via.placeholder.com/300.png/09f/fff"
-                 onclick="openURL()"/>
+                 onclick="openWEB()"/>
         </div>
     </div>
     <script type="text/javascript">
@@ -135,21 +135,21 @@
 
         var linker = new DeepLinker({
         onIgnored: function() {
-            console.log('browser failed to respond to the deep link');
+            openWEB();
         },
         onFallback: function() {
-            console.log('dialog hidden or user returned to tab');
+            openWEB();
         },
         onReturn: function() {
-            console.log('user returned to the page from the native app');
+            openWEB();
         },
         });
 
         linker.openURL(url);
 
-        function openURL()
+        function openWEB()
         {
-            linker.openURL(url);
+            window.location.href = "https://en.zalando.de/outfits/2C44oDyWTF2/"
         }
     </script>
 </div>
