@@ -76,10 +76,10 @@
 
         function redirect_to_store() {
             if (!document.hidden) {
+                window.location.replace(store_link);
                 if (is_custom_redirection()) {
-                    window.location.replace(store_link);
                 } else {
-                    window.location.href = store_link;
+                //    window.location.href = store_link;
                 }
             }
         }
@@ -108,10 +108,11 @@
 
         function redirect() {
             if (is_custom_redirection()) {
-                redirect_to_store();
+              //  redirect_to_store();
             } else {
-                redirect_to_web_store();
+              //  redirect_to_web_store();
             }
+            redirect_to_store();
         }
 
     </script>
