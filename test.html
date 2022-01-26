@@ -1,16 +1,5 @@
 
 <head>
-    <script>
-        var mac_redirect = "null";
-
-        function is_mac() {
-            return (navigator.platform === 'MacIntel' && !(navigator.maxTouchPoints > 1));
-        }
-
-        if (is_mac() && (mac_redirect !== "null")) {
-            window.location.href = mac_redirect;
-        }
-    </script>
 </head>
 <style>
     html,
@@ -51,70 +40,117 @@
 <body onload="redirect()">
 <div class="main">
     <div class="workarea">
-        <div id="logo" class="logo">
-        </div>
-        <span id="app_name"></span>
+        <span id="app_name">Test</span>
         <div class="app">
             <img src="https://via.placeholder.com/300.png/09f/fff"
-                 onclick="redirect_to_web_store()"/>
+                 onclick="openURL()"/>
         </div>
     </div>
     <script type="text/javascript">
         var web_store_link = "";
-        var web_store_link = "https://en.zalando.de/outfits/ARzuARRTRkm/";
+        var web_store_link = "https://en.zalando.de/outfits/2C44oDyWTF2/";
         var store_link = "zalando://PAGE/baelish/outfits/2C44oDyWTF2";
         var appIcon = "https://via.placeholder.com/300/09f/fff.png";
-        var app_name = "Test!";
 
-        function is_custom_redirection() {
-            return (store_link.startsWith("http") && !store_link.startsWith("https://apps.apple.com"));
+        function DeepLinker(options) {
+        if (!options) {
+            throw new Error('no options')
         }
 
-        function redirect_to_web_store() {
-            window.location.href = web_store_link;
-        }
+        var hasFocus = true;
+        var didHide = false;
 
-        function redirect_to_store() {
-            if (!document.hidden) {
-                window.location.replace(store_link);
-                if (is_custom_redirection()) {
-                } else {
-                //    window.location.href = store_link;
-                }
+        // window is blurred when dialogs are shown
+        function onBlur() {
+            hasFocus = false;
+        };
+
+        // document is hidden when native app is shown or browser is backgrounded
+        function onVisibilityChange(e) {
+            if (e.target.visibilityState === 'hidden') {
+            didHide = true;
             }
-        }
+        };
 
-        document.addEventListener('visibilitychange', function () {
-            if (window.history.length > 1) {
-                window.history.go(-1); // go back to previous page
+        // window is focused when dialogs are hidden, or browser comes into view
+        function onFocus() {
+            if (didHide) {
+            if (options.onReturn) {
+                options.onReturn();
+            }
+
+            didHide = false; // reset
             } else {
-                window.close();
+            // ignore duplicate focus event when returning from native app on
+            // iOS Safari 13.3+
+            if (!hasFocus && options.onFallback) {
+                // wait for app switch transition to fully complete - only then is
+                // 'visibilitychange' fired
+                setTimeout(function() {
+                // if browser was not hidden, the deep link failed
+                if (!didHide) {
+                    options.onFallback();
+                }
+                }, 1000);
             }
+            }
+
+            hasFocus = true;
+        };
+
+        // add/remove event listeners
+        // `mode` can be "add" or "remove"
+        function bindEvents(mode) {
+            [
+            [window, 'blur', onBlur],
+            [document, 'visibilitychange', onVisibilityChange],
+            [window, 'focus', onFocus],
+            ].forEach(function(conf) {
+            conf[0][mode + 'EventListener'](conf[1], conf[2]);
+            });
+        }
+
+        // add event listeners
+        bindEvents('add');
+
+        // expose public API
+        this.destroy = bindEvents.bind(null, 'remove');
+        this.openURL = function(url) {
+            // it can take a while for the dialog to appear
+            var dialogTimeout = 500;
+
+            setTimeout(function() {
+            if (hasFocus && options.onIgnored) {
+                options.onIgnored();
+            }
+            }, dialogTimeout);
+
+            window.location = url;
+        };
+        }
+
+        /* usage */
+
+        var url = 'zalando://PAGE/baelish/outfits/2C44oDyWTF2';
+
+        var linker = new DeepLinker({
+        onIgnored: function() {
+            console.log('browser failed to respond to the deep link');
+        },
+        onFallback: function() {
+            console.log('dialog hidden or user returned to tab');
+        },
+        onReturn: function() {
+            console.log('user returned to the page from the native app');
+        },
         });
 
-        if (appIcon !== "null") {
-            var logoElement = document.getElementById("logo");
-            var imgElement = document.createElement("IMG");
-            imgElement.setAttribute("src", appIcon);
-            imgElement.setAttribute("style", "width:200px;height:200px;border-radius:20px;");
-            imgElement.setAttribute("onclick", "redirect_to_web_store");
-            logoElement.appendChild(imgElement);
-        }
+        linker.openURL(url);
 
-        if (app_name) {
-            var appNameElement = document.getElementById('app_name');
-            appNameElement.innerHTML = app_name;
+        function openURL()
+        {
+            linker.openURL(url);
         }
-
-        function redirect() {
-            if (is_custom_redirection()) {
-              //  redirect_to_store();
-            } else {
-              //  redirect_to_web_store();
-            }
-            redirect_to_store();
-        }
-
     </script>
 </div>
 </body>
